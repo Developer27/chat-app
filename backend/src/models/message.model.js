@@ -18,6 +18,12 @@ const messageSchema = new mongoose.Schema(
     image: {
       type: String,
     },
+    isEdited: {
+      type: Boolean,
+    },
+    isMessageSeen: {
+      type: Boolean,
+    },
   },
   { timestamps: true }
 );

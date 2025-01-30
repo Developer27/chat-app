@@ -3,11 +3,10 @@ import { useChatStore } from "../store/useChatStore";
 import { Image, Send, X } from "lucide-react";
 import toast from "react-hot-toast";
 
-function MessageInput() {
-  const [text, setText] = useState("");
+function MessageInput({ editingMessage, text, setText, setEditingMessage }) {
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef(null);
-  const { sendMessage } = useChatStore();
+  const { sendMessage, editMessage, messages } = useChatStore();
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -36,13 +35,37 @@ function MessageInput() {
       await sendMessage({
         text: text.trim(),
         image: imagePreview,
+        isEdited: false,
+        isMessageSeen: false,
       });
 
       setText("");
       setImagePreview(null);
+
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (error) {
       console.log("Failed to send message", error);
+    }
+  };
+
+  const handleEditMessage = async (e) => {
+    e.preventDefault();
+
+    try {
+      const requestedMessage = messages.filter(
+        (mess) => mess._id === editingMessage._id
+      );
+
+      editMessage(requestedMessage[0]._id, {
+        editedText: text,
+        senderId: requestedMessage[0].senderId,
+        receiverId: requestedMessage[0].receiverId,
+      });
+
+      setText("");
+      setEditingMessage(null);
+    } catch (error) {
+      console.log("Failed to edit message", error);
     }
   };
 
@@ -66,13 +89,16 @@ function MessageInput() {
           </div>
         </div>
       )}
-      <form onSubmit={handleSendMessage} className="flex items-center gap-2">
+      <form
+        onSubmit={editingMessage ? handleEditMessage : handleSendMessage}
+        className="flex items-center gap-2"
+      >
         <div className="flex-1 flex gap-2">
           <input
             type="text"
             className="w-full input input-bordered rounded-lg input-sm sm:input-md"
             placeholder="Type a message..."
-            value={text}
+            value={text ? text : ""}
             onChange={(e) => setText(e.target.value)}
           />
           <input
@@ -96,7 +122,7 @@ function MessageInput() {
         <button
           type="submit"
           className="btn btn-sm btn-circle"
-          disabled={!text.trim() && !imagePreview}
+          disabled={!text?.trim() && !imagePreview}
         >
           <Send size={22} />
         </button>

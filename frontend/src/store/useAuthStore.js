@@ -72,7 +72,6 @@ export const useAuthStore = create((set, get) => ({
   updateProfile: async (data) => {
     set({ isUpdatingProfile: true });
     try {
-      console.log(data);
       const res = await axiosInstance.post("/auth/update-profile", data);
 
       set({ authUser: res.data });
