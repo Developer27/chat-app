@@ -55,7 +55,7 @@ const Sidebar = () => {
       const messArr = allMessages.filter((mess) => {
         if (
           (mess.senderId === authUser._id || mess.senderId === id) &&
-          (mess.receiverId === authUser.id || mess.receiverId === id)
+          (mess.receiverId === authUser._id || mess.receiverId === id)
         ) {
           return mess;
         }

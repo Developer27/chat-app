@@ -74,6 +74,7 @@ function ContextMenu({ message, menuPosition, setEditingMessage, setText }) {
               deleteMessage({
                 messageId: message._id,
                 senderId: message.senderId,
+                authUserId: authUser._id,
               });
             }}
           >

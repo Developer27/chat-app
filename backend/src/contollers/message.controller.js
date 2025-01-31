@@ -70,8 +70,10 @@ export const sendMessage = async (req, res) => {
     await newMessage.save();
 
     const receiverSocketId = getReceiverSocketId(receiverId);
+
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("NewMessage", newMessage);
+      io.to(receiverSocketId).emit("LastMessageChanged", "send", newMessage);
     }
 
     res.status(201).json(newMessage);
@@ -85,8 +87,16 @@ export const deleteMessage = async (req, res) => {
   try {
     const messageId = req.params.id;
     const messageRequested = await Message.findById(messageId);
-    const receiverId = messageRequested.receiverId;
-    const senderId = messageRequested.senderId;
+    const { authUserId } = req.body;
+    let senderId = messageRequested.senderId;
+    let receiverId = messageRequested.receiverId;
+    if (receiverId.toString() === authUserId) {
+      receiverId = messageRequested.senderId;
+    }
+    if (senderId.toString() !== authUserId) {
+      senderId = authUserId;
+    }
+    // const senderId = messageRequested.senderId;
 
     if (!messageRequested) {
       return res.status(404).json({ message: "Message not found" });
@@ -96,6 +106,10 @@ export const deleteMessage = async (req, res) => {
 
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("MessageDeleted", {
+        messageId,
+        senderId,
+      });
+      io.to(receiverSocketId).emit("LastMessageChanged", "delete", {
         messageId,
         senderId,
       });

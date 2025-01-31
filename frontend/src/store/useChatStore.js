@@ -106,20 +106,40 @@ export const useChatStore = create((set, get) => ({
     });
 
     socket.on("MessageDeleted", (data) => {
-      const newMess = get().messages.filter(
-        (element) => element._id !== data.messageId
-      );
-      set({ messages: newMess });
       const isMessageSentFormSelectedUser = data.senderId === selectedUser._id;
 
       if (!isMessageSentFormSelectedUser) {
         return;
       } else {
-        set({
-          messages: [...get().messages],
-        });
+        const newMess = get().messages.filter(
+          (element) => element._id !== data.messageId
+        );
+
+        set({ messages: newMess });
       }
     });
+  },
+
+  subscribeToLastEditedMessage: () => {
+    const socket = useAuthStore.getState().socket;
+
+    socket.on("LastMessageChanged", (type, data) => {
+      if (type === "send") {
+        set({ allMessages: [...get().allMessages, data] });
+      }
+      if (type === "delete") {
+        const newMess = get().allMessages.filter(
+          (element) => element._id !== data.messageId
+        );
+        set({ allMessages: newMess });
+      }
+    });
+  },
+
+  unsubscribeToLastEditedMessage: () => {
+    const socket = useAuthStore.getState().socket;
+
+    socket.off("LastMessageChanged");
   },
 
   unsubscribeFromMessages: () => {
@@ -134,7 +154,7 @@ export const useChatStore = create((set, get) => ({
     const { messages, allMessages } = get();
     set({ isMessageDeleting: true });
     try {
-      await axiosInstance.delete(`/messages/${data.messageId}`, data);
+      await axiosInstance.delete(`/messages/${data.messageId}`, { data: data });
 
       const newMess = messages.filter(
         (element) => element._id !== data.messageId
