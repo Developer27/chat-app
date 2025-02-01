@@ -1,12 +1,30 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useChatStore } from "../store/useChatStore";
-import { Image, Send, X } from "lucide-react";
+import { Image, Send, Smile, X } from "lucide-react";
 import toast from "react-hot-toast";
+import data from "@emoji-mart/data";
+import Picker from "@emoji-mart/react";
 
 function MessageInput({ editingMessage, text, setText, setEditingMessage }) {
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef(null);
   const { sendMessage, editMessage, messages } = useChatStore();
+  const [showEojiMenu, setShowEmojiMenu] = useState(false);
+  const emojiMenuRef = useRef(null);
+
+  useEffect(() => {
+    let handler = (e) => {
+      if (!emojiMenuRef.current?.contains(e.target)) {
+        setShowEmojiMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handler);
+
+    return () => {
+      document.removeEventListener("mousedown", handler);
+    };
+  }, [showEojiMenu]);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -41,7 +59,7 @@ function MessageInput({ editingMessage, text, setText, setEditingMessage }) {
 
       setText("");
       setImagePreview(null);
-
+      setShowEmojiMenu(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (error) {
       console.log("Failed to send message", error);
@@ -64,9 +82,14 @@ function MessageInput({ editingMessage, text, setText, setEditingMessage }) {
 
       setText("");
       setEditingMessage(null);
+      setShowEmojiMenu(false);
     } catch (error) {
       console.log("Failed to edit message", error);
     }
+  };
+
+  const addEmoji = (e) => {
+    setText(text + e.native);
   };
 
   return (
@@ -101,13 +124,35 @@ function MessageInput({ editingMessage, text, setText, setEditingMessage }) {
             value={text ? text : ""}
             onChange={(e) => setText(e.target.value)}
           />
-          <input
-            type="file"
-            accept="image/*"
-            className="hidden"
-            ref={fileInputRef}
-            onChange={handleImageChange}
-          />
+          <div className="relative">
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              ref={fileInputRef}
+              onChange={handleImageChange}
+            />
+            <span
+              onClick={() => setShowEmojiMenu(true)}
+              className="absolute bottom-2 right-3 hover:text-slate-500"
+            >
+              <Smile size={20} className="hover:grey-300 cursor-pointer" />
+            </span>
+            {showEojiMenu && (
+              <div
+                ref={emojiMenuRef}
+                className="absolute bottom-[100%] right-20 z-40"
+              >
+                <Picker
+                  data={data}
+                  theme={"auto"}
+                  emojiSize={20}
+                  maxFrequentRows={0}
+                  onEmojiSelect={addEmoji}
+                />
+              </div>
+            )}
+          </div>
 
           <button
             type="button"
